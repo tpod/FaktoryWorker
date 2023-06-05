@@ -10,8 +10,11 @@
         <PackageVersion>0.1.0</PackageVersion>
         <Product>Simon Schoultz</Product>
         <Description>FaktoryWorker - A simple Faktory worker client for Faktory Job Server (contribsys/faktory)</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://github.com/tpod/FaktoryWorker</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/tpod/FaktoryWorker/blob/main/LICENSE</PackageLicenseUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/tpod/FaktoryWorker.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>faktory job worker, faktory client</PackageTags>
         <PackageId>FaktoryWorker</PackageId>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -23,5 +26,9 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
       <PackageReference Include="OneOf" Version="3.0.243" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../README.md" Pack="true" PackagePath="" />
     </ItemGroup>
 </Project>
