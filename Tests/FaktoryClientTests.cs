@@ -1,11 +1,19 @@
 using DotNet.Testcontainers.Builders;
 using FaktoryWorker;
 using FluentAssertions;
+using Xunit.Abstractions;
 
 namespace Tests;
 
 public class FaktoryClientTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public FaktoryClientTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public async Task HappyFlow()
     {
@@ -14,8 +22,10 @@ public class FaktoryClientTests
             .WithImage("contribsys/faktory:latest")
             .WithPortBinding(7419, true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(7419))
+            .WithStartupCallback((_, ct) => Task.Delay(TimeSpan.FromMilliseconds(500), ct))
             .Build();
         await container.StartAsync();
+        _testOutputHelper.WriteLine($"Faktory server running at {container.Hostname}:{container.GetMappedPublicPort(7419)}");
         
         //Connect to server
         await using var faktoryClient = new FaktoryClient(container.Hostname, container.GetMappedPublicPort(7419));
