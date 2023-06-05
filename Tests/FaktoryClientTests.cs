@@ -17,12 +17,17 @@ public class FaktoryClientTests
     [Fact]
     public async Task HappyFlow()
     {
+        var dockerEndpoint = Environment.GetEnvironmentVariable("DOCKER_HOST") ?? "unix:/var/run/docker.sock";
+        
         // Start a Faktory Job Server container locally for this test
         var container = new ContainerBuilder()
+            .WithDockerEndpoint(dockerEndpoint)
             .WithImage("contribsys/faktory:latest")
             .WithPortBinding(7419, true)
+            .WithExposedPort(7419)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(7419))
             .WithStartupCallback((_, ct) => Task.Delay(TimeSpan.FromMilliseconds(500), ct))
+            .WithCleanUp(true)
             .Build();
         await container.StartAsync();
         _testOutputHelper.WriteLine($"Faktory server running at {container.Hostname}:{container.GetMappedPublicPort(7419)}");
