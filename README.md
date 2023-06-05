@@ -1,4 +1,4 @@
-[![Build status](https://img.shields.io/github/actions/workflow/status/tpod/FaktoryWorker/build-and-test.yml)](https://github.com/tpod/FaktoryWorker/actions/workflows/build-and-test.yml)
+[![build-and-test](https://github.com/tpod/FaktoryWorker/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/tpod/FaktoryWorker/actions/workflows/build-and-test.yml)
 
 
 # FaktoryWorker
