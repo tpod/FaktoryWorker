@@ -13,6 +13,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    
+    services:
+      faktory:
+        image: contribsys/faktory:latest
+        ports:
+          - 7419:7419
 
     steps:
     - uses: actions/checkout@v3
@@ -24,7 +30,5 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
     - name: Test
       run: dotnet test --no-build --verbosity normal
