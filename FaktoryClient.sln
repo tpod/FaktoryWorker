@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{E1CD6D5A-58A1-41AF-85AB-B588E8283206}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundServiceExample", "BackgroundServiceExample\BackgroundServiceExample.csproj", "{2E66F3F6-EEE9-4DAB-8684-AFF2301EF111}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaktoryWorker", "FaktoryWorker\FaktoryWorker.csproj", "{2B8AFA2E-F6CE-4B67-98E7-508B0F0ACF94}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E1CD6D5A-58A1-41AF-85AB-B588E8283206}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1CD6D5A-58A1-41AF-85AB-B588E8283206}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1CD6D5A-58A1-41AF-85AB-B588E8283206}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1CD6D5A-58A1-41AF-85AB-B588E8283206}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E66F3F6-EEE9-4DAB-8684-AFF2301EF111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E66F3F6-EEE9-4DAB-8684-AFF2301EF111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E66F3F6-EEE9-4DAB-8684-AFF2301EF111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E66F3F6-EEE9-4DAB-8684-AFF2301EF111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B8AFA2E-F6CE-4B67-98E7-508B0F0ACF94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B8AFA2E-F6CE-4B67-98E7-508B0F0ACF94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B8AFA2E-F6CE-4B67-98E7-508B0F0ACF94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B8AFA2E-F6CE-4B67-98E7-508B0F0ACF94}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

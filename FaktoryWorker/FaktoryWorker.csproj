@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>Simon Schoultz</Authors>
+        <Title>FaktoryWorker - A simple Faktory worker client for Faktory Job Server (contribsys/faktory)</Title>
+        <Company>Simon Schoultz</Company>
+        <PackageVersion>0.1.0</PackageVersion>
+        <Product>Simon Schoultz</Product>
+        <Description>FaktoryWorker - A simple Faktory worker client for Faktory Job Server (contribsys/faktory)</Description>
+        <PackageProjectUrl>https://github.com/tpod/FaktoryWorker</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/tpod/FaktoryWorker/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageTags>faktory job worker, faktory client</PackageTags>
+        <PackageId>FaktoryWorker</PackageId>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+      <PackageReference Include="OneOf" Version="3.0.243" />
+    </ItemGroup>
+</Project>
