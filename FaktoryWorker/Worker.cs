@@ -1,27 +1,48 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Neleus.DependencyInjection.Extensions;
 
 namespace FaktoryWorker;
 
 internal class Worker : BackgroundService
 {
-    private readonly IJobConsumer _jobConsumer;
     private readonly ILogger<Worker> _logger;
     private readonly JobsState _jobsState;
+    private static readonly Dictionary<string, IJobConsumer> _consumers = new();
     private readonly WorkerOptions _options;
     private DateTime _timeSinceLastHeartbeat = DateTime.UtcNow;
     private FaktoryClient _client;
 
-    public Worker(ILogger<Worker> logger, JobsState jobsState, IOptions<WorkerOptions> options, IJobConsumer jobConsumer)
+    public Worker(ILogger<Worker> logger,
+        JobsState jobsState, 
+        IOptions<WorkerOptions> options, 
+        IServiceByNameFactory<IJobConsumer> factory)
     {
-        _jobConsumer = jobConsumer;
         _logger = logger;
         _jobsState = jobsState;
         _options = options.Value;
-        _client = new FaktoryClient(_options.Host, _options.Port, _logger);
+
+        SetupConsumers(factory);
+        _client = new FaktoryClient(
+            _options.Host, _options.Port, 
+            _options.WorkerHostName, _options.FaktoryVersion, _options.WorkerId, 
+            _logger);
     }
-    
+
+    private static void SetupConsumers(IServiceByNameFactory<IJobConsumer> factory)
+    {
+        foreach (var name in factory.GetNames())
+        {
+            var consumer = factory.GetByName(name);
+            _consumers.Add(name, consumer);
+        }
+
+        if (_consumers.Count == 0)
+            throw new Exception(
+                "No consumers were registered. Please register consumers using the AddJobConsumer & Build methods.");
+    }
+
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Worker is stopping.");
@@ -57,34 +78,41 @@ internal class Worker : BackgroundService
         _logger.LogInformation("WorkerId: {WorkerId}", _options.WorkerId);
         _logger.LogInformation("Worker is connecting to Faktory.");
         await _client.ConnectAsync();
-        await _client.HelloAsync(_options.WorkerHostName, _options.FaktoryVersion, _options.WorkerId!);
+        await _client.HelloAsync();
         _logger.LogInformation("Worker connected successfully.");
         _logger.LogInformation("Working...");
         
         while (!cancellationToken.IsCancellationRequested)
         {
             await AckOrFailJobs(_client);
-
-            var potentiallyHasMoreJobs = true;
-            while (potentiallyHasMoreJobs)
+            
+            var potentiallyHasMoreJobs = _consumers
+                .Select(x => new {Key = x.Key, Value = true})
+                .ToDictionary(x => x.Key, x => x.Value);
+            while (potentiallyHasMoreJobs.Any(x => x.Value == true))
             {
                 if (_jobsState.JobsStarted.Count >= _options.ParallelJobs) continue;
                 await HeartbeatAsync(_client, _options.WorkerId!);
                 await AckOrFailJobs(_client);
-                var job = await _client.FetchJobAsync();
 
-                if (job != null)
+                foreach (var queue in potentiallyHasMoreJobs.Where(x => x.Value == true).Select(x => x.Key))
                 {
-                    if (!_jobsState.JobsStarted.TryAdd(job.JobId, job))
-                        throw new Exception("Key (JobId) already exists. JobIds must be unique.");
+                    var job = await _client.FetchJobAsync(queue);
 
-                    ThreadPool.QueueUserWorkItem(async _ => await HandleJob(job));
+                    if (job != null)
+                    {
+                        if (!_jobsState.JobsStarted.TryAdd(job.JobId, job))
+                            throw new Exception("Key (JobId) already exists. JobIds must be unique.");
+
+                        ThreadPool.QueueUserWorkItem(async _ => await HandleJob(job));
+                    }
+                    else
+                    {
+                        potentiallyHasMoreJobs[queue] = false;
+                    }
+                    await Task.Delay(10, cancellationToken);
                 }
-                else
-                {
-                    potentiallyHasMoreJobs = false;
-                }
-                
+
                 await Task.Delay(10, cancellationToken);
             }
             
@@ -98,7 +126,7 @@ internal class Worker : BackgroundService
         if (DateTime.UtcNow - _timeSinceLastHeartbeat > TimeSpan.FromSeconds(10))
         {
             _timeSinceLastHeartbeat = DateTime.UtcNow;
-            await client.HeartbeatAsync(workerId);
+            await client.HeartbeatAsync();
         }
     }
 
@@ -137,7 +165,7 @@ internal class Worker : BackgroundService
     {
         try
         {
-            await _jobConsumer.ConsumeJob(job);
+            await _consumers[job.Queue].ConsumeJob(job);
             _jobsState.JobsStarted.Remove(job.JobId, out _);
             _jobsState.JobsCompleted.Enqueue(job.JobId);
         }

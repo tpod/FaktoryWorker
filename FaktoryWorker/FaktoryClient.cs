@@ -12,12 +12,15 @@ public class FaktoryClient : IAsyncDisposable
     private readonly ILogger? _logger;
     private readonly Socket _socket;
     private readonly IPEndPoint _ipEndPoint;
-    private string _hostname;
-    private int _version;
-    private string _workerId;
+    private readonly string _workerHostName;
+    private readonly int _version;
+    private readonly string _workerId;
 
-    public FaktoryClient(string host, int port, ILogger? logger = null)
+    public FaktoryClient(string host, int port, string workerHostName, int version, string workerId, ILogger? logger = null)
     {
+        _workerHostName = workerHostName;
+        _version = version;
+        _workerId = workerId;
         _logger = logger;
         IPAddress ipAddress;
         try
@@ -25,7 +28,7 @@ public class FaktoryClient : IAsyncDisposable
             var ipHostInfo = Dns.GetHostEntry(host);
             ipAddress = ipHostInfo.AddressList[0];
         }
-        catch (Exception e)
+        catch (Exception)
         {
             ipAddress = IPAddress.Parse(host);
         }
@@ -48,9 +51,9 @@ public class FaktoryClient : IAsyncDisposable
             _ => throw new Exception("Failed to connect to Faktory"));
     }
 
-    public async Task HeartbeatAsync(string workerId)
+    public async Task HeartbeatAsync()
     {
-        var beat = new {wid = workerId};
+        var beat = new {wid = _workerId};
         var json = JsonSerializer.Serialize(beat);
         var message = $"BEAT {json}\r\n";
         var messageBytes = Encoding.UTF8.GetBytes(message);
@@ -59,13 +62,9 @@ public class FaktoryClient : IAsyncDisposable
         await ReceiveResponse("+OK");
     }
 
-    public async Task HelloAsync(string hostname, int version, string workerId)
+    public async Task HelloAsync()
     {
-        _hostname = hostname;
-        _version = version;
-        _workerId = workerId;
-
-        var hello = new Hello(hostname, version, workerId);
+        var hello = new Hello(_workerHostName, _version, _workerId);
         var json = JsonSerializer.Serialize(hello);
         var message = $"HELLO {json}\r\n";
         var messageBytes = Encoding.UTF8.GetBytes(message);
@@ -168,7 +167,7 @@ public class FaktoryClient : IAsyncDisposable
 
         await _socket.DisconnectAsync(true);
         await ConnectAsync();
-        await HelloAsync(_hostname, _version, _workerId);
+        await HelloAsync();
 
         _logger?.LogError(
             "ReceiveResponse failed. Tried to receive response {retries} times, but failed. Last response: '{response}'",
@@ -221,7 +220,7 @@ public class FaktoryClient : IAsyncDisposable
                         return job;
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     //ignore, will be retried next time
                     //_logger?.LogError(e, "Failed to deserialize job. Response: '{response}'. Parts: '{parts}'", response, string.Join(", ", parts));
@@ -238,9 +237,10 @@ public class FaktoryClient : IAsyncDisposable
         return new Error();
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _socket.Dispose();
+        return ValueTask.CompletedTask;
     }
 
     private record Hello(

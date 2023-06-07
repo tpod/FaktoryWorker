@@ -3,6 +3,7 @@ using FaktoryWorker;
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
+        //Add and configure the FaktoryWorker
         services.AddFaktoryWorker(options =>
         {
             options.Host = "localhost";
@@ -15,8 +16,14 @@ var host = Host.CreateDefaultBuilder(args)
             options.WorkerId = Guid.NewGuid().ToString();
         });
         
-        services.AddSingleton<IJobConsumer, ExampleJobConsumer>();
-        
+        //Add consumers and name which queue they should consume from
+        services
+            .AddJobConsumer<ExampleAJobConsumer>("default", services)
+            .AddJobConsumer<ExampleBJobConsumer>("queue2", services)
+            .Build();
+
+        //Configure the shutdown timeout of the host itself.
+        //Should be set to a value higher than the shutdown timeout of the FaktoryWorker. 
         services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(30));
     })
     .Build();
