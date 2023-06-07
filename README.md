@@ -4,7 +4,7 @@
 [![publish-nuget](https://github.com/tpod/FaktoryWorker/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/tpod/FaktoryWorker/actions/workflows/publish-nuget.yml)
 
 [![NuGet Release](https://img.shields.io/nuget/v/FaktoryWorker)](https://www.nuget.org/packages/FaktoryWorker)
-
+![NuGet Release](https://img.shields.io/badge/dotnet%20version-net6.0%20%7C%20net7.0-blue)
 
 # FaktoryWorker
 A simple .NET worker and client for [Faktory Job Server](https://github.com/contribsys/faktory). For more information & documentation about Faktory - go to [Faktory Job Server](https://github.com/contribsys/faktory).
