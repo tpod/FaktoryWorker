@@ -32,8 +32,7 @@ public class FaktoryClientTests
     [Fact]
     public async Task SeedSomeJobs()
     {
-        var wid = Guid.NewGuid().ToString();
-        await using var faktoryClient = new FaktoryClient("127.0.0.1", 7419, "testworker", 2, wid);
+        await using var faktoryClient = new FaktoryClient("127.0.0.1", 7419, "testworker", 2, Guid.NewGuid().ToString());
         await faktoryClient.ConnectAsync();
         await faktoryClient.HelloAsync();
 
