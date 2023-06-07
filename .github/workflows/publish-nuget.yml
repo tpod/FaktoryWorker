@@ -15,6 +15,13 @@ defaults:
     shell: pwsh
 
 jobs:
+
+  services:
+    faktory:
+      image: contribsys/faktory:latest
+      ports:
+        - 7419:7419
+
   create_nuget:
     runs-on: ubuntu-latest
     steps:
