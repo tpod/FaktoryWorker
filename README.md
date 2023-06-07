@@ -7,10 +7,12 @@
 
 
 # FaktoryWorker
-A simple .NET worker and client for [Faktory Job Server](https://github.com/contribsys/faktory). For more information, documentation, installation, features, installation, etc. - go to [Faktory Job Server](https://github.com/contribsys/faktory).
+A simple .NET worker and client for [Faktory Job Server](https://github.com/contribsys/faktory). For more information & documentation about Faktory - go to [Faktory Job Server](https://github.com/contribsys/faktory).
 
 
 # Quick Start
+
+> `dotnet add package FaktoryWorker`
 
 ## Client
 Using the `FaktoryClient` you can connect to the Faktory Server and publish jobs like so:
@@ -73,12 +75,29 @@ services
 See [BackgroundServiceExample](https://github.com/tpod/FaktoryWorker/tree/main/BackgroundServiceExample) for a full runnable example. 
 
 
-# Faktory API implemented support
+# Faktory API
 
+The following have been implemented so far (enough to push jobs and setup a functional worker):\
+`HI` (connect socket)\
+`HELLO` (handshake/initialize the worker)\
+`BEAT` (heartbeat)\
+`PUSH` (push a job to server)\
+`FETCH` (fetch a job from server)\
+`ACK` (notify job was successfully processed)\
+`FAIL` (notify job failed)
 
+For full client API support the following are needed:\
+`FLUSH`\
+`END`\
+`PUSHB`\
+`QUEUE REMOVE`\
+`QUEUE PAUSE`\
+`QUEUE RESUME`\
+`INFO`
 
 # TODO
 
-Reconnecting to Faktory if the connection is lost.  
+- [ ] Reconnecting to Faktory if the connection is lost.  
+- [ ] Full API support.
 
 
