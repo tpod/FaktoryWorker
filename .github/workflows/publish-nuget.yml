@@ -16,12 +16,6 @@ defaults:
 
 jobs:
 
-  services:
-    faktory:
-      image: contribsys/faktory:latest
-      ports:
-        - 7419:7419
-
   create_nuget:
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +40,11 @@ jobs:
 
   run_test:
     runs-on: ubuntu-latest
+    services:
+      faktory:
+        image: contribsys/faktory:latest
+        ports:
+          - 7419:7419
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
