@@ -1,4 +1,3 @@
-using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Neleus.DependencyInjection.Extensions;
 
@@ -6,6 +5,12 @@ namespace FaktoryWorker;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Adds the worker background service as a HostedService to the service collection.
+    /// Configures the worker options.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
     public static void AddFaktoryWorker(this IServiceCollection services, Action<WorkerOptions> configuration)
     {
         services.Configure(configuration);

@@ -1,5 +1,8 @@
 namespace FaktoryWorker;
 
+/// <summary>
+/// The options that should be configured during DI in the AddFaktoryWorker method.
+/// </summary>
 public class WorkerOptions
 {
     /// <summary>
@@ -35,7 +38,7 @@ public class WorkerOptions
     
     /// <summary>
     /// How many jobs the FaktoryWorker will try to process in parallel.
-    /// Warning: the worker will consume at least this many threads and eat up CPU & memory.
+    /// Warning: the worker will consume at least this many threads and eat up CPU and memory.
     /// Please set to a sensible value according to your specific jobs and hardware.
     /// </summary>
     public int ParallelJobs { get; set; } = 25;

@@ -41,6 +41,10 @@ public class FaktoryClient : IAsyncDisposable
             ProtocolType.Tcp);
     }
 
+    /// <summary>
+    /// Connects the socket to the Faktory server and expects a "+HI" response.
+    /// </summary>
+    /// <exception cref="Exception"></exception>
     public async Task ConnectAsync()
     {
         await _socket.ConnectAsync(_ipEndPoint);
@@ -51,6 +55,9 @@ public class FaktoryClient : IAsyncDisposable
             _ => throw new Exception("Failed to connect to Faktory"));
     }
 
+    /// <summary>
+    /// Sends a "BEAT" message to the Faktory server. Should be done at least every 15 seconds.
+    /// </summary>
     public async Task HeartbeatAsync()
     {
         var beat = new {wid = _workerId};
@@ -62,6 +69,11 @@ public class FaktoryClient : IAsyncDisposable
         await ReceiveResponse("+OK");
     }
 
+    /// <summary>
+    /// Sends a "HELLO" message to the Faktory server initializing the WorkerHostName, WorkerId and Version.
+    /// This is the handshake that must be done after connecting but before any other commands.
+    /// </summary>
+    /// <exception cref="Exception"></exception>
     public async Task HelloAsync()
     {
         var hello = new Hello(_workerHostName, _version, _workerId);
@@ -76,6 +88,13 @@ public class FaktoryClient : IAsyncDisposable
             _ => throw new Exception($"HELLO failed: {response}"));
     }
 
+    /// <summary>
+    /// Sends a "FETCH" message to the Faktory server to retrieve a job.
+    /// Returns null if no job is available.
+    /// </summary>
+    /// <param name="queueName"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public async Task<Job?> FetchJobAsync(string? queueName = null)
     {
         queueName ??= "default";
@@ -87,9 +106,14 @@ public class FaktoryClient : IAsyncDisposable
         return response.Match<Job?>(
             job => job,
             none => null,
-            error => throw new Exception($"HELLO failed: {response}"));
+            error => throw new Exception($"FETCH failed: {response}"));
     }
 
+    /// <summary>
+    /// Sends a "PUSH" message to the Faktory server with the job to be pushed.
+    /// </summary>
+    /// <param name="job"></param>
+    /// <exception cref="Exception"></exception>
     public async Task PushJobAsync(Job job)
     {
         var json = JsonSerializer.Serialize(job);
@@ -103,6 +127,11 @@ public class FaktoryClient : IAsyncDisposable
             _ => throw new Exception($"PUSH failed: {response}"));
     }
 
+    /// <summary>
+    /// Sends a "ACK" message to the Faktory server to acknowledge that the job has been processed successfully.
+    /// </summary>
+    /// <param name="jobId"></param>
+    /// <returns></returns>
     public async Task<OneOf<Success, Error<string>>> AckJobAsync(string jobId)
     {
         var jid = new {jid = jobId};
@@ -114,6 +143,12 @@ public class FaktoryClient : IAsyncDisposable
         return await ReceiveResponse("+OK");
     }
 
+    /// <summary>
+    /// Sends a "FAIL" message to the Faktory server to indicate that the job has failed.
+    /// </summary>
+    /// <param name="jobId"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
     public async Task<OneOf<Success, Error<string>>> FailJobAsync(string jobId, Exception e)
     {
         var jid = new {jid = jobId, errtype = e.GetType().ToString(), message = $"{e.Message}\n{e.StackTrace}"};
@@ -124,22 +159,6 @@ public class FaktoryClient : IAsyncDisposable
 
         return await ReceiveResponse("+OK");
     }
-
-    // public async Task<string> InfoAsync(Socket client)
-    // {
-    //     var message = $"INFO \r\n";
-    //     var messageBytes = Encoding.UTF8.GetBytes(message);
-    //     await client.SendAsync(messageBytes, SocketFlags.None);
-    //     
-    //     var response = await ReceiveResponse();
-    //     
-    //     if (!response.StartsWith("+OK"))
-    //     {
-    //         throw new Exception($"INFO failed: {response}");
-    //     }
-    //
-    //     return response;
-    // }
 
     private async Task<OneOf<Success, Error<string>>> ReceiveResponse(string expectedResponse)
     {
@@ -253,6 +272,18 @@ public class FaktoryClient : IAsyncDisposable
         [property: JsonPropertyName("pwdhash")]
         string? PasswordHash = null);
 
+    /// <summary>
+    /// The job object that can either be pushed to the server or retrieved from the server.
+    /// </summary>
+    /// <param name="JobId"></param>
+    /// <param name="Queue"></param>
+    /// <param name="JobType"></param>
+    /// <param name="Arguments"></param>
+    /// <param name="ReserveForSeconds"></param>
+    /// <param name="RetryAmount"></param>
+    /// <param name="CreatedAt"></param>
+    /// <param name="EnqueuedAt"></param>
+    /// <param name="Failure"></param>
     public record Job(
         [property: JsonPropertyName("jid")] string JobId,
         [property: JsonPropertyName("queue")] string Queue,
@@ -269,6 +300,14 @@ public class FaktoryClient : IAsyncDisposable
         [property: JsonPropertyName("failure")]
         Failure? Failure = null);
 
+    /// <summary>
+    /// If a job has failed before, this object will be returned from the server.
+    /// </summary>
+    /// <param name="RetryCount"></param>
+    /// <param name="Remaining"></param>
+    /// <param name="FailedAt"></param>
+    /// <param name="Message"></param>
+    /// <param name="ErrorType"></param>
     public record Failure(
         [property: JsonPropertyName("retry_count")]
         int RetryCount, 

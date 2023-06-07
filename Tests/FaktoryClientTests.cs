@@ -15,7 +15,7 @@ public class FaktoryClientTests
         await faktoryClient.HeartbeatAsync();
         
         //Push a job
-        var job = new FaktoryClient.Job(Guid.NewGuid().ToString(),"default", "SendEmail", new []{"test"});
+        var job = new FaktoryClient.Job(Guid.NewGuid().ToString(),"testqueue", "SendEmail", new []{"test"});
         await faktoryClient.PushJobAsync(job);
         
         //Fetch the job
