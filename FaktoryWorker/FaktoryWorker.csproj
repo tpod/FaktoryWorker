@@ -7,7 +7,7 @@
         <Authors>Simon Schoultz</Authors>
         <Title>FaktoryWorker - A simple Faktory worker client for Faktory Job Server (contribsys/faktory)</Title>
         <Company>Simon Schoultz</Company>
-        <PackageVersion>0.2.1</PackageVersion>
+        <PackageVersion>0.2.2</PackageVersion>
         <Product>Simon Schoultz</Product>
         <Description>FaktoryWorker - A simple Faktory worker client for Faktory Job Server (contribsys/faktory)</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
