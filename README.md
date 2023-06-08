@@ -1,12 +1,10 @@
-# Status
-
+# FaktoryWorker
 [![build-and-test](https://github.com/tpod/FaktoryWorker/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/tpod/FaktoryWorker/actions/workflows/build-and-test.yml)
 [![publish-nuget](https://github.com/tpod/FaktoryWorker/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/tpod/FaktoryWorker/actions/workflows/publish-nuget.yml)
 
 [![NuGet Release](https://img.shields.io/nuget/v/FaktoryWorker)](https://www.nuget.org/packages/FaktoryWorker)
 ![NuGet Release](https://img.shields.io/badge/dotnet%20version-net6.0%20%7C%20net7.0-blue)
 
-# FaktoryWorker
 A simple .NET worker and client for [Faktory Job Server](https://github.com/contribsys/faktory). For more information & documentation about Faktory - go to [Faktory Job Server](https://github.com/contribsys/faktory).
 
 
@@ -33,6 +31,9 @@ See [FaktoryClientTests.cs](https://github.com/tpod/FaktoryWorker/blob/main/Test
 ## Worker
 In a HostBuilder, you can use the `AddFaktoryWorker` extension method to configure dependency injection for the worker. 
 The worker will then start as a `BackgroundService` and poll for jobs every `PollingFrequencySeconds` until the app is stopped. When stopped, if there are any jobs in progress, the worker will wait for the specified `ShutdownTimeoutSeconds` until exiting. 
+
+The worker runs with a single client and socket connection, but is able to process multiple jobs in seperate background threads. Configure `ParalellJobs` to a sensible value according to your specific jobs and hardware, otherwise the worker may eat up too much CPU & Memory. 
+
 ```csharp
 services.AddFaktoryWorker(options =>
 {
