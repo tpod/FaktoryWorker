@@ -49,10 +49,15 @@ public class FaktoryClient : IAsyncDisposable
     {
         await _socket.ConnectAsync(_ipEndPoint);
 
-        var response = await ReceiveResponse("+HI");
-        response.Switch(
-            _ => { },
-            _ => throw new Exception("Failed to connect to Faktory"));
+        try
+        {
+            await ReceiveResponse("+HI");
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e, "Failed to connect to Faktory server");
+            throw;
+        }
     }
 
     /// <summary>
@@ -66,7 +71,15 @@ public class FaktoryClient : IAsyncDisposable
         var messageBytes = Encoding.UTF8.GetBytes(message);
         await _socket.SendAsync(messageBytes, SocketFlags.None);
 
-        await ReceiveResponse("+OK");
+        try
+        {
+            await ReceiveResponse("+OK");
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e, "BEAT failed");
+            throw;
+        }
     }
 
     /// <summary>
@@ -82,10 +95,15 @@ public class FaktoryClient : IAsyncDisposable
         var messageBytes = Encoding.UTF8.GetBytes(message);
         await _socket.SendAsync(messageBytes, SocketFlags.None);
 
-        var response = await ReceiveResponse("+OK");
-        response.Switch(
-            _ => { },
-            _ => throw new Exception($"HELLO failed: {response}"));
+        try
+        {
+            await ReceiveResponse("+OK");
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e, "HELLO failed");
+            throw;
+        }
     }
 
     /// <summary>
@@ -101,12 +119,16 @@ public class FaktoryClient : IAsyncDisposable
         var message = $"FETCH {queueName}\r\n";
         var messageBytes = Encoding.UTF8.GetBytes(message);
         await _socket.SendAsync(messageBytes, SocketFlags.None);
-
-        var response = await ReceiveJobResponse();
-        return response.Match<Job?>(
-            job => job,
-            none => null,
-            error => throw new Exception($"FETCH failed: {response}"));
+        
+        try
+        {
+            return await ReceiveJobResponse();
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e, "FETCH failed");
+            throw;
+        }
     }
 
     /// <summary>
@@ -121,10 +143,15 @@ public class FaktoryClient : IAsyncDisposable
         var messageBytes = Encoding.UTF8.GetBytes(message);
         await _socket.SendAsync(messageBytes, SocketFlags.None);
 
-        var response = await ReceiveResponse("+OK");
-        response.Switch(
-            _ => { },
-            _ => throw new Exception($"PUSH failed: {response}"));
+        try
+        {
+            await ReceiveResponse("+OK");
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e, "PUSH failed");
+            throw;
+        }
     }
 
     /// <summary>
@@ -132,7 +159,7 @@ public class FaktoryClient : IAsyncDisposable
     /// </summary>
     /// <param name="jobId"></param>
     /// <returns></returns>
-    public async Task<OneOf<Success, Error<string>>> AckJobAsync(string jobId)
+    public async Task AckJobAsync(string jobId)
     {
         var jid = new {jid = jobId};
         var json = JsonSerializer.Serialize(jid);
@@ -140,7 +167,15 @@ public class FaktoryClient : IAsyncDisposable
         var messageBytes = Encoding.UTF8.GetBytes(message);
         await _socket.SendAsync(messageBytes, SocketFlags.None);
 
-        return await ReceiveResponse("+OK");
+        try
+        {
+            await ReceiveResponse("+OK");
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e, "ACK failed");
+            throw;
+        }
     }
 
     /// <summary>
@@ -149,7 +184,7 @@ public class FaktoryClient : IAsyncDisposable
     /// <param name="jobId"></param>
     /// <param name="e"></param>
     /// <returns></returns>
-    public async Task<OneOf<Success, Error<string>>> FailJobAsync(string jobId, Exception e)
+    public async Task FailJobAsync(string jobId, Exception e)
     {
         var jid = new {jid = jobId, errtype = e.GetType().ToString(), message = $"{e.Message}\n{e.StackTrace}"};
         var json = JsonSerializer.Serialize(jid);
@@ -157,10 +192,18 @@ public class FaktoryClient : IAsyncDisposable
         var messageBytes = Encoding.UTF8.GetBytes(message);
         await _socket.SendAsync(messageBytes, SocketFlags.None);
 
-        return await ReceiveResponse("+OK");
+        try
+        {
+            await ReceiveResponse("+OK");
+        }
+        catch (Exception exception)
+        {
+            _logger?.LogError(exception, "FAIL failed");
+            throw;
+        }
     }
 
-    private async Task<OneOf<Success, Error<string>>> ReceiveResponse(string expectedResponse)
+    private async Task ReceiveResponse(string expectedResponse)
     {
         var retries = 0;
         var response = "";
@@ -177,37 +220,33 @@ public class FaktoryClient : IAsyncDisposable
 
             response = Encoding.UTF8.GetString(buffer, 0, received);
             if (response.Contains(expectedResponse))
-                return new Success();
-            if(response.Contains("-ERR Job not found"))
-                return new Error<string>("Job not found.");
+                return;
+            if (response.Contains("-ERR Job not found"))
+                throw new JobNotFoundException();
             await Task.Delay(50);
             retries++;
         }
 
-        await _socket.DisconnectAsync(true);
-        await ConnectAsync();
-        await HelloAsync();
-
         _logger?.LogError(
             "ReceiveResponse failed. Tried to receive response {retries} times, but failed. Last response: '{response}'",
             retries, response);
-        return new Error<string>("ReceiveResponse failed.");
+        throw new FaktoryClientException("ReceiveResponse failed.");
     }
 
-    private async Task<OneOf<Job, None, Error>> ReceiveJobResponse()
+    private async Task<Job?> ReceiveJobResponse()
     {
         var retries = 0;
         var response = "";
         var buffer = new byte[1024 * 8];
         var expectedJsonLength = 0;
 
-        while (retries < 10)
+        while (retries < 5)
         {
             var received = await _socket.ReceiveAsync(buffer, SocketFlags.None);
 
             if (received == 0)
             {
-                await Task.Delay(25);
+                await Task.Delay(50);
                 retries++;
                 continue;
             }
@@ -215,7 +254,7 @@ public class FaktoryClient : IAsyncDisposable
             response = Encoding.UTF8.GetString(buffer, 0, received);
 
             if (response.StartsWith("$-1"))
-                return new None();
+                return null;
 
             var parts = response.Split('\n');
             var jsonLength = parts[0]
@@ -253,7 +292,7 @@ public class FaktoryClient : IAsyncDisposable
         _logger?.LogError(
             "ReceiveJobResponse failed. Tried to receive response {retries} times, but failed. Response: '{response}'",
             retries, response);
-        return new Error();
+        throw new FaktoryClientException("ReceiveJobResponse failed.");
     }
 
     public ValueTask DisposeAsync()

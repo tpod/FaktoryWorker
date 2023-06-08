@@ -28,7 +28,6 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
       <PackageReference Include="Neleus.DependencyInjection.Extensions" Version="1.0.6" />
-      <PackageReference Include="OneOf" Version="3.0.243" />
     </ItemGroup>
 
     <ItemGroup>

@@ -92,7 +92,7 @@ internal class Worker : BackgroundService
             while (potentiallyHasMoreJobs.Any(x => x.Value == true))
             {
                 if (_jobsState.JobsStarted.Count >= _options.ParallelJobs) continue;
-                await HeartbeatAsync(_client, _options.WorkerId!);
+                await HeartbeatAsync(_client);
                 await AckOrFailJobs(_client);
 
                 foreach (var queue in potentiallyHasMoreJobs.Where(x => x.Value == true).Select(x => x.Key))
@@ -110,18 +110,19 @@ internal class Worker : BackgroundService
                     {
                         potentiallyHasMoreJobs[queue] = false;
                     }
+
                     await Task.Delay(10, cancellationToken);
                 }
 
                 await Task.Delay(10, cancellationToken);
             }
-            
-            await HeartbeatAsync(_client, _options.WorkerId);
+
+            await HeartbeatAsync(_client);
             await Task.Delay(_options.PollingFrequencySeconds, cancellationToken);
         }
     }
     
-    private async Task HeartbeatAsync(FaktoryClient client, string workerId)
+    private async Task HeartbeatAsync(FaktoryClient client)
     {
         if (DateTime.UtcNow - _timeSinceLastHeartbeat > TimeSpan.FromSeconds(10))
         {
@@ -134,30 +135,52 @@ internal class Worker : BackgroundService
     {
         while(_jobsState.JobsCompleted.TryDequeue(out var jobId))
         {
-            var result = await client.AckJobAsync(jobId);
-            result.Switch( 
-                _ => {},
-                async error => {
-                    if(error.Value == "Job not found.") return;
-                    var retry = await client.AckJobAsync(jobId);
-                    retry.Switch(
-                        success => { },
-                        error => _jobsState.JobsCompleted.Enqueue(jobId));
-                });
+            try
+            {
+                await client.AckJobAsync(jobId);
+            }
+            catch (JobNotFoundException e)
+            {
+                //OK
+            }
+            catch (FaktoryClientException e)
+            {
+                //retry once
+                try
+                {
+                    await client.AckJobAsync(jobId);
+                }
+                catch (FaktoryClientException exception)
+                {
+                    //Throw it back on the queue
+                    _jobsState.JobsCompleted.Enqueue(jobId);
+                }
+            }
         }
 
-        while(_jobsState.JobsFailed.TryDequeue(out var jobId))
+        while(_jobsState.JobsFailed.TryDequeue(out var failedJob))
         {
-            var result = await client.FailJobAsync(jobId.JobId, jobId.Exception);
-            result.Switch( 
-                _ => {},
-                async error => { 
-                    if(error.Value == "Job not found.") return;
-                    var retry = await client.FailJobAsync(jobId.JobId, jobId.Exception);
-                    retry.Switch(
-                        success => { },
-                        error => _jobsState.JobsFailed.Enqueue(jobId));
-                });
+            try
+            {
+                await client.FailJobAsync(failedJob.JobId, failedJob.Exception);
+            }
+            catch (JobNotFoundException e)
+            {
+                //OK
+            }
+            catch (FaktoryClientException e)
+            {
+                //retry once
+                try
+                {
+                    await client.FailJobAsync(failedJob.JobId, failedJob.Exception);
+                }
+                catch (FaktoryClientException exception)
+                {
+                    //Throw it back on the queue
+                    _jobsState.JobsFailed.Enqueue(failedJob);
+                }
+            }
         }
     }
 
